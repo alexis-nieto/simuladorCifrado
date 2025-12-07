@@ -20,3 +20,6 @@ wheels/
 *.txt
 # Except for requirements.txt
 !requirements.txt
+
+# Ignore all .spec files
+*.spec
