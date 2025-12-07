@@ -1,2 +1,2 @@
 cryptography
-pyglet
+PyQt6>=6.6.1
