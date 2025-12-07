@@ -3,7 +3,7 @@ import os
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTextEdit, 
     QComboBox, QPushButton, QMessageBox, QInputDialog, 
-    QFileDialog, QGroupBox, QFormLayout, QFrame
+    QFileDialog, QGroupBox, QFormLayout, QFrame, QLineEdit
 )
 from PyQt6.QtGui import QFont, QFontDatabase
 from PyQt6.QtCore import Qt
