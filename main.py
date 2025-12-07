@@ -1,17 +1,12 @@
-import tkinter as tk
-from tkinter import ttk
+import sys
+from PyQt6.QtWidgets import QApplication
 from gui import EncryptionApp
 
 if __name__ == "__main__":
-    # Configuración de la ventana principal (Vanilla Tkinter)
-    app = tk.Tk()
-    app.title("Simulador de Cifrado")
-    app.geometry("900x700")
+    app = QApplication(sys.argv)
+    app.setApplicationName("Simulador de Cifrado")
     
-    # Iniciar la interfaz gráfica
-    EncryptionApp(app)
+    window = EncryptionApp()
+    window.show()
     
-    # Centrar la ventana (manual en vanilla tk)
-    app.eval('tk::PlaceWindow . center')
-    
-    app.mainloop()
+    sys.exit(app.exec())

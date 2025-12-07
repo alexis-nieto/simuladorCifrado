@@ -1,246 +1,241 @@
-import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog, scrolledtext
-from tkinter import filedialog
+import sys
 import os
+from PyQt6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTextEdit, 
+    QComboBox, QPushButton, QMessageBox, QInputDialog, 
+    QFileDialog, QGroupBox, QFormLayout, QFrame
+)
+from PyQt6.QtGui import QFont, QFontDatabase
+from PyQt6.QtCore import Qt
 
 from crypto_manager import CryptoManager
 from file_manager import guardar_archivo, cargar_archivo
 from utils import validar_texto, limpiar_nombre_archivo
-from tkinter import font as tkfont
-import pyglet
 
-# Cargar fuente personalizada
-try:
-    pyglet.font.add_file('SourceCodePro-Regular.ttf')
-    CUSTOM_FONT = "Source Code Pro"
-except Exception as e:
-    print(f"Error loading custom font: {e}")
-    CUSTOM_FONT = None
-
-def get_ui_font(size=10, weight="normal"):
-    """Return a font tuple with the best available sans-serif font."""
-    if CUSTOM_FONT:
-        return (CUSTOM_FONT, size, weight)
-        
-    families = ["Roboto", "Helvetica", "Arial", "Liberation Sans", "DejaVu Sans", "Verdana", "sans-serif"]
-    import platform
-    if platform.system() == "Linux":
-        families = ["Liberation Sans", "DejaVu Sans", "Ubuntu", "Roboto", "Helvetica", "Arial"] + families
-    return (families[0], size, weight)
-
-def get_mono_font(size=10):
-    """Return a font tuple with the best available monospace font."""
-    if CUSTOM_FONT:
-        return (CUSTOM_FONT, size)
-        
-    families = ["Consolas", "Monaco", "Liberation Mono", "DejaVu Sans Mono", "Ubuntu Mono", "Courier New", "monospace"]
-    import platform
-    if platform.system() == "Linux":
-        families = ["Liberation Mono", "DejaVu Sans Mono", "Ubuntu Mono"] + families
-    return (families[0], size)
-
-class EncryptionApp(ttk.Frame):
-    def __init__(self, master):
-        super().__init__(master, padding=20)
-        self.pack(fill=tk.BOTH, expand=True)
+class EncryptionApp(QWidget):
+    def __init__(self):
+        super().__init__()
         self.crypto = CryptoManager()
-        
-        # === Cabecera ===
-        lbl_titulo = ttk.Label(self, text="Simulador de Cifrado Modular", font=get_ui_font(20, "bold"))
-        lbl_titulo.pack(pady=(0, 20))
-        
-        # === Área de Texto ===
-        lbl_input = ttk.Label(self, text="Texto de Entrada / Salida:", font=get_ui_font(12))
-        lbl_input.pack(anchor=tk.W, pady=(0, 5))
-        
-        self.txt_area = scrolledtext.ScrolledText(self, height=12, font=get_mono_font(11))
-        self.txt_area.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
-        
-        # === Controles ===
-        controls_frame = ttk.LabelFrame(self, text="Panel de Control", padding=15)
-        controls_frame.pack(fill=tk.X, pady=(0, 20))
-        
-        # Frame interno para grid/pack
-        grid_frame = ttk.Frame(controls_frame)
-        grid_frame.pack(fill=tk.X, expand=True)
+        self.init_ui()
 
-        # Selección de Algoritmo
-        lbl_algo = ttk.Label(grid_frame, text="Algoritmo:", font=get_ui_font(11))
-        lbl_algo.pack(side=tk.LEFT, padx=(0, 10))
+    def init_ui(self):
+        self.setWindowTitle("Simulador de Cifrado Modular")
+        self.resize(900, 700)
         
-        self.combo_algo = ttk.Combobox(grid_frame, values=[
+        # Main Layout
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+
+        # === Header ===
+        title_label = QLabel("Simulador de Cifrado Modular")
+        title_font = QFont("Sans Serif", 20, QFont.Weight.Bold)
+        title_label.setFont(title_font)
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(title_label)
+        main_layout.addSpacing(20)
+
+        # === Text Area ===
+        input_label = QLabel("Texto de Entrada / Salida:")
+        input_label.setFont(QFont("Sans Serif", 12))
+        main_layout.addWidget(input_label)
+
+        self.txt_area = QTextEdit()
+        self.txt_area.setFont(QFont("Monospace", 11))
+        main_layout.addWidget(self.txt_area)
+        main_layout.addSpacing(20)
+
+        # === Controls ===
+        controls_group = QGroupBox("Panel de Control")
+        controls_layout = QHBoxLayout()
+        controls_group.setLayout(controls_layout)
+        main_layout.addWidget(controls_group)
+
+        # Algorithm Selection
+        algo_label = QLabel("Algoritmo:")
+        controls_layout.addWidget(algo_label)
+
+        self.combo_algo = QComboBox()
+        self.combo_algo.addItems([
             "Cifrado César",
             "ROT13",
             "Transposición Columnar",
             "Simétrico (AES)",
             "Asimétrico (RSA)"
-        ], state="readonly", width=25, font=get_ui_font(10))
-        self.combo_algo.current(0)
-        self.combo_algo.pack(side=tk.LEFT, padx=(0, 20))
-        
-        # Botones de Acción
-        btn_encrypt = ttk.Button(grid_frame, text="ENCRIPTAR", command=self.encriptar)
-        btn_encrypt.pack(side=tk.LEFT, padx=(0, 10))
-        
-        btn_decrypt = ttk.Button(grid_frame, text="DESENCRIPTAR", command=self.desencriptar)
-        btn_decrypt.pack(side=tk.LEFT, padx=(0, 10))
-        
-        btn_clear = ttk.Button(grid_frame, text="LIMPIAR", command=self.limpiar)
-        btn_clear.pack(side=tk.LEFT)
+        ])
+        self.combo_algo.setMinimumWidth(200)
+        controls_layout.addWidget(self.combo_algo)
+        controls_layout.addSpacing(20)
 
-        # === Barra de Estado ===
-        self.status_var = tk.StringVar()
-        self.status_var.set("Listo para operar.")
-        lbl_status = ttk.Label(self, textvariable=self.status_var, font=get_ui_font(9), relief=tk.SUNKEN, anchor=tk.W)
-        lbl_status.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
+        # Action Buttons
+        btn_encrypt = QPushButton("ENCRIPTAR")
+        btn_encrypt.clicked.connect(self.encriptar)
+        controls_layout.addWidget(btn_encrypt)
+
+        btn_decrypt = QPushButton("DESENCRIPTAR")
+        btn_decrypt.clicked.connect(self.desencriptar)
+        controls_layout.addWidget(btn_decrypt)
+
+        btn_clear = QPushButton("LIMPIAR")
+        btn_clear.clicked.connect(self.limpiar)
+        controls_layout.addWidget(btn_clear)
+
+        # === Status Bar ===
+        self.status_label = QLabel("Listo para operar.")
+        self.status_label.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Sunken)
+        self.status_label.setContentsMargins(5, 5, 5, 5)
+        main_layout.addWidget(self.status_label)
 
     def set_status(self, msg):
-        self.status_var.set(msg)
+        self.status_label.setText(msg)
 
     def limpiar(self):
-        self.txt_area.delete("1.0", tk.END)
+        self.txt_area.clear()
         self.set_status("Área de texto limpiada.")
 
     def obtener_texto(self):
-        return self.txt_area.get("1.0", tk.END).strip()
+        return self.txt_area.toPlainText().strip()
 
     def encriptar(self):
         texto = self.obtener_texto()
         if not validar_texto(texto):
-            messagebox.showwarning("Advertencia", "Por favor ingrese texto para encriptar.")
+            QMessageBox.warning(self, "Advertencia", "Por favor ingrese texto para encriptar.")
             return
 
-        algo = self.combo_algo.get()
+        algo = self.combo_algo.currentText()
         resultado = None
         es_binario = False
         self.set_status(f"Encriptando con {algo}...")
-        
+
         try:
             if algo == "Cifrado César":
-                shift = simpledialog.askinteger("Desplazamiento", "Ingrese el desplazamiento (número entero):", parent=self)
-                if shift is not None:
+                shift, ok = QInputDialog.getInt(self, "Desplazamiento", "Ingrese el desplazamiento (número entero):")
+                if ok:
                     resultado = self.crypto.cifrar_cesar(texto, shift)
-                    
+            
             elif algo == "ROT13":
                 resultado = self.crypto.rot13(texto)
-                
+
             elif algo == "Transposición Columnar":
-                clave = simpledialog.askinteger("Clave", "Ingrese el número de columnas:", parent=self)
-                if clave is not None and clave > 0:
+                clave, ok = QInputDialog.getInt(self, "Clave", "Ingrese el número de columnas:")
+                if ok and clave > 0:
                     resultado = self.crypto.transposicion_columnar(texto, clave)
-                elif clave is not None:
-                    messagebox.showerror("Error", "La clave debe ser mayor a 0.")
-                    
+                elif ok:
+                    QMessageBox.critical(self, "Error", "La clave debe ser mayor a 0.")
+
             elif algo == "Simétrico (AES)":
-                pwd = simpledialog.askstring("Contraseña", "Ingrese una contraseña segura:", show='*', parent=self)
-                if pwd:
+                pwd, ok = QInputDialog.getText(self, "Contraseña", "Ingrese una contraseña segura:", QLineEdit.EchoMode.Password)
+                if ok and pwd:
                     resultado = self.crypto.cifrar_simetrico(texto, pwd)
                     es_binario = True
-                    # Guardar contraseña (backup)
                     guardar_archivo(pwd, prefijo="contrasena", extension=".backup.txt")
-                    
+
             elif algo == "Asimétrico (RSA)":
                 priv, pub = self.crypto.generar_par_claves_rsa()
                 pub_pem = self.crypto.serializar_clave_publica(pub)
                 priv_pem = self.crypto.serializar_clave_privada(priv)
-                
-                # Guardar claves
+
                 guardar_archivo(pub_pem, prefijo="public_key", extension=".pem", es_binario=True)
                 guardar_archivo(priv_pem, prefijo="private_key", extension=".pem", es_binario=True)
-                
+
                 resultado = self.crypto.cifrar_asimetrico(texto, pub_pem)
                 es_binario = True
-                messagebox.showinfo("Claves Generadas", "Se han generado y guardado las claves pública y privada.")
+                QMessageBox.information(self, "Claves Generadas", "Se han generado y guardado las claves pública y privada.")
 
             if resultado:
                 ext = ".bin" if es_binario else ".txt"
                 archivo = guardar_archivo(resultado, prefijo=f"mensaje-encriptado_{limpiar_nombre_archivo(algo)}", extension=ext, es_binario=es_binario)
                 if archivo:
-                    self.txt_area.delete("1.0", tk.END)
+                    self.txt_area.clear()
                     if not es_binario:
-                        self.txt_area.insert(tk.END, resultado)
+                        self.txt_area.setPlainText(resultado)
                     else:
-                        self.txt_area.insert(tk.END, f"[CONTENIDO BINARIO GUARDADO EN {archivo}]")
+                        self.txt_area.setPlainText(f"[CONTENIDO BINARIO GUARDADO EN {archivo}]")
                     
                     msg_exito = f"Encriptación exitosa. Guardado en: {archivo}"
                     self.set_status(msg_exito)
-                    messagebox.showinfo("Éxito", msg_exito)
+                    QMessageBox.information(self, "Éxito", msg_exito)
 
         except Exception as e:
             self.set_status("Error en encriptación.")
-            messagebox.showerror("Error de Encriptación", f"Ocurrió un error:\n{e}")
+            QMessageBox.critical(self, "Error de Encriptación", f"Ocurrió un error:\n{e}")
 
     def desencriptar(self):
-        algo = self.combo_algo.get()
+        algo = self.combo_algo.currentText()
         self.set_status(f"Desencriptando con {algo}...")
-        
+
         try:
             if algo == "Asimétrico (RSA)":
-                messagebox.showinfo("Seleccionar Archivo", "Seleccione el archivo encriptado (.bin)")
-                contenido, _ = cargar_archivo(es_binario=True, extensiones=[("Archivos Binarios", "*.bin")])
-                if contenido is None: 
+                QMessageBox.information(self, "Seleccionar Archivo", "Seleccione el archivo encriptado (.bin)")
+                file_path, _ = QFileDialog.getOpenFileName(self, "Seleccionar Archivo", "", "Archivos Binarios (*.bin)")
+                if not file_path:
                     self.set_status("Operación cancelada.")
                     return
-                
-                messagebox.showinfo("Seleccionar Clave", "Seleccione la CLAVE PRIVADA (.pem)")
-                key_pem, _ = cargar_archivo(es_binario=True, extensiones=[("Archivos PEM", "*.pem")])
-                if key_pem is None: 
+                with open(file_path, "rb") as f:
+                    contenido = f.read()
+
+                QMessageBox.information(self, "Seleccionar Clave", "Seleccione la CLAVE PRIVADA (.pem)")
+                key_path, _ = QFileDialog.getOpenFileName(self, "Seleccionar Clave", "", "Archivos PEM (*.pem)")
+                if not key_path:
                     self.set_status("Operación cancelada.")
                     return
-                
+                with open(key_path, "rb") as f:
+                    key_pem = f.read()
+
                 resultado = self.crypto.descifrar_asimetrico(contenido, key_pem)
-                
+
             elif algo == "Simétrico (AES)":
-                messagebox.showinfo("Seleccionar Archivo", "Seleccione el archivo encriptado (.bin)")
-                contenido, _ = cargar_archivo(es_binario=True, extensiones=[("Archivos Binarios", "*.bin")])
-                if contenido is None: 
+                QMessageBox.information(self, "Seleccionar Archivo", "Seleccione el archivo encriptado (.bin)")
+                file_path, _ = QFileDialog.getOpenFileName(self, "Seleccionar Archivo", "", "Archivos Binarios (*.bin)")
+                if not file_path:
                     self.set_status("Operación cancelada.")
                     return
-                
-                pwd = simpledialog.askstring("Contraseña", "Ingrese la contraseña:", show='*', parent=self)
-                if not pwd: 
+                with open(file_path, "rb") as f:
+                    contenido = f.read()
+
+                pwd, ok = QInputDialog.getText(self, "Contraseña", "Ingrese la contraseña:", QLineEdit.EchoMode.Password)
+                if not ok or not pwd:
                     self.set_status("Operación cancelada.")
                     return
-                
+
                 resultado = self.crypto.descifrar_simetrico(contenido, pwd)
-                
+
             else:
-                # Algoritmos de texto
                 contenido = self.obtener_texto()
                 if not contenido:
-                    messagebox.showinfo("Seleccionar Archivo", "El área de texto está vacía. Seleccione un archivo.")
-                    contenido, _ = cargar_archivo()
-                    if contenido is None: 
+                    QMessageBox.information(self, "Seleccionar Archivo", "El área de texto está vacía. Seleccione un archivo.")
+                    file_path, _ = QFileDialog.getOpenFileName(self, "Seleccionar Archivo", "", "Archivos de Texto (*.txt);;Todos los archivos (*)")
+                    if not file_path:
                         self.set_status("Operación cancelada.")
                         return
-                    self.txt_area.insert(tk.END, contenido) # Mostrar lo cargado
-                
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        contenido = f.read()
+                    self.txt_area.setPlainText(contenido)
+
                 if algo == "Cifrado César":
-                    shift = simpledialog.askinteger("Desplazamiento", "Ingrese el desplazamiento original:", parent=self)
-                    if shift is not None:
+                    shift, ok = QInputDialog.getInt(self, "Desplazamiento", "Ingrese el desplazamiento original:")
+                    if ok:
                         resultado = self.crypto.descifrar_cesar(contenido, shift)
-                    else: 
+                    else:
                         self.set_status("Operación cancelada.")
                         return
-                        
+
                 elif algo == "ROT13":
                     resultado = self.crypto.rot13(contenido)
-                    
+
                 elif algo == "Transposición Columnar":
-                    clave = simpledialog.askinteger("Clave", "Ingrese el número de columnas original:", parent=self)
-                    if clave is not None:
+                    clave, ok = QInputDialog.getInt(self, "Clave", "Ingrese el número de columnas original:")
+                    if ok:
                         resultado = self.crypto.descifrar_transposicion(contenido, clave)
-                    else: 
+                    else:
                         self.set_status("Operación cancelada.")
                         return
                 else:
                     return
 
-            self.txt_area.delete("1.0", tk.END)
-            self.txt_area.insert(tk.END, resultado)
+            self.txt_area.setPlainText(resultado)
             self.set_status("Desencriptación completada con éxito.")
-            messagebox.showinfo("Listo!!!", "Desencriptación completada con éxito.")
-            
+            QMessageBox.information(self, "Listo!!!", "Desencriptación completada con éxito.")
+
         except Exception as e:
             self.set_status("Error en desencriptación.")
-            messagebox.showerror("Error de Desencriptación", f"Ocurrió un error (verifique clave/contraseña):\n{e}")
+            QMessageBox.critical(self, "Error de Desencriptación", f"Ocurrió un error (verifique clave/contraseña):\n{e}")
