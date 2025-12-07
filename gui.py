@@ -1,8 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, simpledialog
-import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
-from ttkbootstrap.scrolled import ScrolledText
+from tkinter import ttk, messagebox, simpledialog, scrolledtext
 from tkinter import filedialog
 import os
 
@@ -10,21 +7,32 @@ from crypto_manager import CryptoManager
 from file_manager import guardar_archivo, cargar_archivo
 from utils import validar_texto, limpiar_nombre_archivo
 from tkinter import font as tkfont
+import pyglet
+
+# Cargar fuente personalizada
+try:
+    pyglet.font.add_file('SourceCodePro-Regular.ttf')
+    CUSTOM_FONT = "Source Code Pro"
+except Exception as e:
+    print(f"Error loading custom font: {e}")
+    CUSTOM_FONT = None
 
 def get_ui_font(size=10, weight="normal"):
     """Return a font tuple with the best available sans-serif font."""
+    if CUSTOM_FONT:
+        return (CUSTOM_FONT, size, weight)
+        
     families = ["Roboto", "Helvetica", "Arial", "Liberation Sans", "DejaVu Sans", "Verdana", "sans-serif"]
-    # We can't easily check availability without a root window here, but Tkinter handles lists in some versions or we just pick one.
-    # A safer bet is to let Tkinter find the best match or just use the first one that works if we could check.
-    # Since we can't check easily before root init, we'll use a common Linux friendly one as primary if on Linux.
     import platform
     if platform.system() == "Linux":
         families = ["Liberation Sans", "DejaVu Sans", "Ubuntu", "Roboto", "Helvetica", "Arial"] + families
-    
     return (families[0], size, weight)
 
 def get_mono_font(size=10):
     """Return a font tuple with the best available monospace font."""
+    if CUSTOM_FONT:
+        return (CUSTOM_FONT, size)
+        
     families = ["Consolas", "Monaco", "Liberation Mono", "DejaVu Sans Mono", "Ubuntu Mono", "Courier New", "monospace"]
     import platform
     if platform.system() == "Linux":
@@ -33,35 +41,32 @@ def get_mono_font(size=10):
 
 class EncryptionApp(ttk.Frame):
     def __init__(self, master):
-        super().__init__(master, padding=30)
-        self.pack(fill=BOTH, expand=YES)
+        super().__init__(master, padding=20)
+        self.pack(fill=tk.BOTH, expand=True)
         self.crypto = CryptoManager()
         
         # === Cabecera ===
-        # Fuente más grande y moderna
-        lbl_titulo = ttk.Label(self, text="Simulador de Cifrado Modular", font=get_ui_font(24, "bold"), bootstyle="primary")
-        lbl_titulo.pack(pady=(0, 30))
+        lbl_titulo = ttk.Label(self, text="Simulador de Cifrado Modular", font=get_ui_font(20, "bold"))
+        lbl_titulo.pack(pady=(0, 20))
         
         # === Área de Texto ===
         lbl_input = ttk.Label(self, text="Texto de Entrada / Salida:", font=get_ui_font(12))
-        lbl_input.pack(anchor=W, pady=(0, 10))
+        lbl_input.pack(anchor=tk.W, pady=(0, 5))
         
-        # Fuente monoespaciada para el texto cifrado, un poco más grande
-        self.txt_area = ScrolledText(self, height=12, font=get_mono_font(11))
-        self.txt_area.pack(fill=BOTH, expand=YES, pady=(0, 30))
+        self.txt_area = scrolledtext.ScrolledText(self, height=12, font=get_mono_font(11))
+        self.txt_area.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
         
         # === Controles ===
-        # Agrupamos los controles en un LabelFrame para mejor organización visual
-        controls_frame = ttk.Labelframe(self, text="Panel de Control", padding=20, bootstyle="info")
-        controls_frame.pack(fill=X, pady=(0, 20))
+        controls_frame = ttk.LabelFrame(self, text="Panel de Control", padding=15)
+        controls_frame.pack(fill=tk.X, pady=(0, 20))
         
-        # Frame interno para centrar elementos si se desea, o usar grid
+        # Frame interno para grid/pack
         grid_frame = ttk.Frame(controls_frame)
-        grid_frame.pack(fill=X, expand=YES)
+        grid_frame.pack(fill=tk.X, expand=True)
 
         # Selección de Algoritmo
         lbl_algo = ttk.Label(grid_frame, text="Algoritmo:", font=get_ui_font(11))
-        lbl_algo.pack(side=LEFT, padx=(0, 15))
+        lbl_algo.pack(side=tk.LEFT, padx=(0, 10))
         
         self.combo_algo = ttk.Combobox(grid_frame, values=[
             "Cifrado César",
@@ -69,35 +74,35 @@ class EncryptionApp(ttk.Frame):
             "Transposición Columnar",
             "Simétrico (AES)",
             "Asimétrico (RSA)"
-        ], state="readonly", width=30, font=get_ui_font(10))
+        ], state="readonly", width=25, font=get_ui_font(10))
         self.combo_algo.current(0)
-        self.combo_algo.pack(side=LEFT, padx=(0, 30))
+        self.combo_algo.pack(side=tk.LEFT, padx=(0, 20))
         
-        # Botones de Acción - Más grandes y con iconos (simulados con texto por ahora)
-        btn_encrypt = ttk.Button(grid_frame, text="ENCRIPTAR", style="primary.TButton", command=self.encriptar, width=15)
-        btn_encrypt.pack(side=LEFT, padx=(0, 15))
+        # Botones de Acción
+        btn_encrypt = ttk.Button(grid_frame, text="ENCRIPTAR", command=self.encriptar)
+        btn_encrypt.pack(side=tk.LEFT, padx=(0, 10))
         
-        btn_decrypt = ttk.Button(grid_frame, text="DESENCRIPTAR", style="success.TButton", command=self.desencriptar, width=15)
-        btn_decrypt.pack(side=LEFT, padx=(0, 15))
+        btn_decrypt = ttk.Button(grid_frame, text="DESENCRIPTAR", command=self.desencriptar)
+        btn_decrypt.pack(side=tk.LEFT, padx=(0, 10))
         
-        btn_clear = ttk.Button(grid_frame, text="LIMPIAR", style="secondary.TButton", command=self.limpiar, width=10)
-        btn_clear.pack(side=LEFT)
+        btn_clear = ttk.Button(grid_frame, text="LIMPIAR", command=self.limpiar)
+        btn_clear.pack(side=tk.LEFT)
 
         # === Barra de Estado ===
         self.status_var = tk.StringVar()
         self.status_var.set("Listo para operar.")
-        lbl_status = ttk.Label(self, textvariable=self.status_var, font=get_ui_font(9), bootstyle="secondary", relief=SUNKEN, anchor=W)
-        lbl_status.pack(side=BOTTOM, fill=X, pady=(20, 0))
+        lbl_status = ttk.Label(self, textvariable=self.status_var, font=get_ui_font(9), relief=tk.SUNKEN, anchor=tk.W)
+        lbl_status.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
 
     def set_status(self, msg):
         self.status_var.set(msg)
 
     def limpiar(self):
-        self.txt_area.delete("1.0", END)
+        self.txt_area.delete("1.0", tk.END)
         self.set_status("Área de texto limpiada.")
 
     def obtener_texto(self):
-        return self.txt_area.get("1.0", END).strip()
+        return self.txt_area.get("1.0", tk.END).strip()
 
     def encriptar(self):
         texto = self.obtener_texto()
@@ -151,11 +156,11 @@ class EncryptionApp(ttk.Frame):
                 ext = ".bin" if es_binario else ".txt"
                 archivo = guardar_archivo(resultado, prefijo=f"mensaje-encriptado_{limpiar_nombre_archivo(algo)}", extension=ext, es_binario=es_binario)
                 if archivo:
-                    self.txt_area.delete("1.0", END)
+                    self.txt_area.delete("1.0", tk.END)
                     if not es_binario:
-                        self.txt_area.insert(END, resultado)
+                        self.txt_area.insert(tk.END, resultado)
                     else:
-                        self.txt_area.insert(END, f"[CONTENIDO BINARIO GUARDADO EN {archivo}]")
+                        self.txt_area.insert(tk.END, f"[CONTENIDO BINARIO GUARDADO EN {archivo}]")
                     
                     msg_exito = f"Encriptación exitosa. Guardado en: {archivo}"
                     self.set_status(msg_exito)
@@ -208,7 +213,7 @@ class EncryptionApp(ttk.Frame):
                     if contenido is None: 
                         self.set_status("Operación cancelada.")
                         return
-                    self.txt_area.insert(END, contenido) # Mostrar lo cargado
+                    self.txt_area.insert(tk.END, contenido) # Mostrar lo cargado
                 
                 if algo == "Cifrado César":
                     shift = simpledialog.askinteger("Desplazamiento", "Ingrese el desplazamiento original:", parent=self)
@@ -231,8 +236,8 @@ class EncryptionApp(ttk.Frame):
                 else:
                     return
 
-            self.txt_area.delete("1.0", END)
-            self.txt_area.insert(END, resultado)
+            self.txt_area.delete("1.0", tk.END)
+            self.txt_area.insert(tk.END, resultado)
             self.set_status("Desencriptación completada con éxito.")
             messagebox.showinfo("Listo!!!", "Desencriptación completada con éxito.")
             

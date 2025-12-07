@@ -1,15 +1,17 @@
-import ttkbootstrap as ttk
+import tkinter as tk
+from tkinter import ttk
 from gui import EncryptionApp
 
 if __name__ == "__main__":
-    # Configuración del tema principal
-    # Se usa "flatly" para un look moderno y plano
-    app = ttk.Window(title="Simulador de Cifrado", themename="flatly", size=(900, 700))
+    # Configuración de la ventana principal (Vanilla Tkinter)
+    app = tk.Tk()
+    app.title("Simulador de Cifrado")
+    app.geometry("900x700")
     
     # Iniciar la interfaz gráfica
     EncryptionApp(app)
     
-    # Centrar la ventana
-    app.place_window_center()
+    # Centrar la ventana (manual en vanilla tk)
+    app.eval('tk::PlaceWindow . center')
     
     app.mainloop()
