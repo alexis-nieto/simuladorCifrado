@@ -3,8 +3,8 @@ from gui import EncryptionApp
 
 if __name__ == "__main__":
     # Configuración del tema principal
-    # Se usa "litera" como solicitado para un look limpio y moderno (blanco/azul)
-    app = ttk.Window(title="Simulador de Cifrado", themename="litera", size=(800, 600))
+    # Se usa "flatly" para un look moderno y plano
+    app = ttk.Window(title="Simulador de Cifrado", themename="flatly", size=(900, 700))
     
     # Iniciar la interfaz gráfica
     EncryptionApp(app)

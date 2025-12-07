@@ -139,30 +139,60 @@ class CryptoManager:
 
     def cifrar_asimetrico(self, texto, public_key_pem):
         """
-        Cifra usando RSA y la clave pública.
+        Cifra usando un esquema Híbrido (RSA + AES).
+        1. Genera una clave simétrica (Fernet).
+        2. Cifra el texto con esa clave.
+        3. Cifra la clave simétrica con RSA.
+        4. Retorna: [Clave Cifrada (256 bytes)] + [Texto Cifrado]
         """
+        # 1. Generar clave simétrica
+        sim_key = Fernet.generate_key()
+        
+        # 2. Cifrar texto con clave simétrica
+        f = Fernet(sim_key)
+        texto_cifrado_sim = f.encrypt(texto.encode())
+        
+        # 3. Cifrar clave simétrica con RSA
         public_key = serialization.load_pem_public_key(public_key_pem)
-        ciphertext = public_key.encrypt(
-            texto.encode(),
+        clave_sim_cifrada = public_key.encrypt(
+            sim_key,
             padding.OAEP(
                 mgf=padding.MGF1(algorithm=hashes.SHA256()),
                 algorithm=hashes.SHA256(),
                 label=None
             )
         )
-        return ciphertext
+        
+        # 4. Combinar
+        return clave_sim_cifrada + texto_cifrado_sim
 
     def descifrar_asimetrico(self, ciphertext, private_key_pem):
         """
-        Descifra usando RSA y la clave privada.
+        Descifra usando esquema Híbrido.
+        1. Separa los primeros 256 bytes (Clave RSA cifrada).
+        2. Descifra la clave simétrica.
+        3. Usa la clave para descifrar el texto.
         """
+        # Tamaño del bloque RSA de 2048 bits = 256 bytes
+        block_size = 256
+        
+        if len(ciphertext) < block_size:
+            raise ValueError("El archivo es demasiado corto para ser un cifrado híbrido válido.")
+            
+        clave_sim_cifrada = ciphertext[:block_size]
+        texto_cifrado_sim = ciphertext[block_size:]
+        
+        # 1. Descifrar clave simétrica con RSA
         private_key = serialization.load_pem_private_key(private_key_pem, password=None)
-        plaintext = private_key.decrypt(
-            ciphertext,
+        sim_key = private_key.decrypt(
+            clave_sim_cifrada,
             padding.OAEP(
                 mgf=padding.MGF1(algorithm=hashes.SHA256()),
                 algorithm=hashes.SHA256(),
                 label=None
             )
         )
-        return plaintext.decode()
+        
+        # 2. Descifrar texto con clave simétrica
+        f = Fernet(sim_key)
+        return f.decrypt(texto_cifrado_sim).decode()
