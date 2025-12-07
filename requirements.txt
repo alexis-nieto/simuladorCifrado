@@ -1,2 +1,11 @@
-cryptography
-PyQt6>=6.6.1
+altgraph==0.17.5
+cffi==2.0.0
+cryptography==46.0.3
+packaging==25.0
+pycparser==2.23
+pyinstaller==6.17.0
+pyinstaller-hooks-contrib==2025.10
+pyqt6==6.10.1
+pyqt6-qt6==6.10.1
+pyqt6-sip==13.10.3
+setuptools==80.9.0
