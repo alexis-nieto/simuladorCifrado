@@ -8,3 +8,18 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Files created by the program itself:
+
+# Binaries
+*.bin
+# PEM files
+*.pem
+
+# Ignore all .txt files
+*.txt
+# Except for requirements.txt
+!requirements.txt
+
+# Ignore all .spec files
+*.spec

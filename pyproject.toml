@@ -6,5 +6,5 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "cryptography>=46.0.3",
-    "ttkbootstrap>=1.19.2",
+    "PyQt6>=6.6.1",
 ]
