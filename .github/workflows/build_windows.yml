@@ -12,7 +12,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
 
@@ -32,7 +32,7 @@ jobs:
         pyinstaller --onefile --noconsole --name "CipherTool" --add-data "SourceCodePro-Regular.ttf;." --hidden-import "tkinter" --hidden-import "tkinter.filedialog" --hidden-import "tkinter.messagebox" --hidden-import "tkinter.simpledialog" --hidden-import "tkinter.scrolledtext" --hidden-import "tkinter.font" main.py
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: CipherTool-Windows
         path: dist/CipherTool.exe
