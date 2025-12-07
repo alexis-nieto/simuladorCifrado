@@ -29,7 +29,7 @@ jobs:
         # --noconsole: No console window
         # --add-data: Include the font file (Windows separator is ;)
         # --name: Name of the executable
-        uv run --with pyinstaller pyinstaller --onefile --noconsole --name "CipherTool" --add-data "SourceCodePro-Regular.ttf;." main.py
+        uv run --with pyinstaller pyinstaller --onefile --noconsole --name "CipherTool" --collect-all "PyQt6" --add-data "SourceCodePro-Regular.ttf;." main.py
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
