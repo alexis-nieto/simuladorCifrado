@@ -19,7 +19,7 @@ class EncryptionApp(QWidget):
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle("Simulador de Cifrado Modular")
+        self.setWindowTitle("Simulador de Cifrado")
         self.resize(900, 700)
         
         # Main Layout
@@ -27,7 +27,7 @@ class EncryptionApp(QWidget):
         self.setLayout(main_layout)
 
         # === Header ===
-        title_label = QLabel("Simulador de Cifrado Modular")
+        title_label = QLabel("Simulador de Cifrado")
         title_font = QFont("Sans Serif", 20, QFont.Weight.Bold)
         title_label.setFont(title_font)
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
