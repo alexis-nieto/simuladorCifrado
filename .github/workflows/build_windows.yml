@@ -24,7 +24,7 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        pyinstaller --onefile --noconsole --name "CipherTool" --add-data "SourceCodePro-Regular.ttf;." main.py
+        pyinstaller --onefile --noconsole --name "CipherTool" main.py
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
